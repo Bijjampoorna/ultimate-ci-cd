@@ -25,6 +25,7 @@ pipeline{
         stage('Docker Push Image'){
             environment{
                 DOCKER_IMAGE="bijjampoorna/ultimate-ci-cd:${BUILD_NUMBER}"
+                // DOCKERFILE_LOCATION = "java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile"
                 REGISTRY_CREDENTIALS= credentials('docker-cred')
             }
             steps{
