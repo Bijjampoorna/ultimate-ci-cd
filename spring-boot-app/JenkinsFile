@@ -1,0 +1,74 @@
+pipeline{
+    agent{
+        image 'abhishekf5/maven-abhishek-docker-agent:v1'
+        args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+    }
+    stages{
+
+        stage('checkout'){
+            steps{
+                sh 'echo checkout passed'
+            }
+           
+        }
+        
+        stage('Build and Test'){
+            steps{
+                sh 'cd spring-boot-app '
+                sh 'mvn clean package'
+            }
+            
+
+        }
+        stage('Static Code Analysis'){
+            environment{
+                SONAR_URL= "172.31.6.123:9000"
+            }
+            steps{
+                withCredentials([string(credentialsId='sonarqube',variable:'SONAR_QUBE')])
+                sh 'cd spring-boot-app '
+                sh 'mvn sonar:sonar -Dsonar.login=$SONAR_QUBE -Dsonar.host.url=${SONAR_URL}'
+            }
+        }
+        stage('Docker Push Image'){
+            environment{
+                DOCKER_IMAGE="bijjampoorna/ultimate-ci-cd:${BUILD_NUMBER}"
+                REGISTRY_CREDENTIALS= credentials('docker-cred')
+            }
+            steps{
+                script{
+                    sh 'cd spring-boot-app '
+                    sh 'docker build -t ${DOCKER_IMAGE} .'
+                    def docker.image("${DOCKER_IMAGE}")
+                    docker.withRegistry('',"docker-cred"){
+                        dockerImage.push()
+                    }
+                }
+
+            }
+
+
+        }
+        stage('Update Deployment File'){
+            environment{
+                GIT_REPO_NAME="jenkins-zero-hero"
+                GIT_USER_NAME="Bijjampoorna"
+            }
+            steps{
+                withCredentials([string(credentialsId='github',variable: 'GITHUB_TOKEN')])
+                sh '''
+                 git config user.email "bijjampoorna@gmail.com"
+                 git config user.name "Bijjampoorna"
+                 BUILD_NUMBER=${BUILD_NUMBER}
+                 sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" spring-boot-app-manifests/deployment.yml
+                 git commit -m "update deployment file with $BUILD_NUMBER"
+                 git push https"//${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GITHUB_TOKEN} HEAD:master
+                '''
+                
+            }
+
+
+        }
+    }
+
+}
