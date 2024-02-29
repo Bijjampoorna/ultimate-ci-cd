@@ -51,7 +51,7 @@ pipeline{
                 GIT_USER_NAME="Bijjampoorna"
             }
             steps{
-                withCredentials([string(credentialsId='github',variable: 'GITHUB_TOKEN')])
+                withCredentials([string(credentialsId='github',variable: 'GITHUB_TOKEN')]){
                 sh '''
                  git config user.email "bijjampoorna@gmail.com"
                  git config user.name "Bijjampoorna"
@@ -60,7 +60,7 @@ pipeline{
                  git commit -m "update deployment file with $BUILD_NUMBER"
                  git push https"//${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GITHUB_TOKEN} HEAD:master
                 '''
-                
+                }
             }
 
 
