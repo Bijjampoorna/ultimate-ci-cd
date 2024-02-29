@@ -23,46 +23,4 @@ pipeline{
         }
          
         
-        stage('Docker Push Image'){
-            environment{
-                DOCKER_IMAGE="bijjampoorna/ultimate-ci-cd:${BUILD_NUMBER}"
-                // DOCKERFILE_LOCATION = "java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile"
-                REGISTRY_CREDENTIALS= credentials('docker-cred')
-            }
-            steps{
-                script{
-                    sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app '
-                    sh 'docker build -t ${DOCKER_IMAGE} .'
-                    def dockerImage = docker.image("${DOCKER_IMAGE}")
-                    docker.withRegistry('https://hub.docker.com/repository/docker/bijjampoorna/ultimate-ci-cd/general',"docker-cred"){
-                        dockerImage.push()
-                    }
-                }
 
-            }
-
-
-        }
-        stage('Update Deployment File'){
-            environment{
-                GIT_REPO_NAME="jenkins-zero-hero"
-                GIT_USER_NAME="Bijjampoorna"
-            }
-            steps{
-                withCredentials([string(credentialsId='github',variable: 'GITHUB_TOKEN')])
-                sh '''
-                 git config user.email "bijjampoorna@gmail.com"
-                 git config user.name "Bijjampoorna"
-                 BUILD_NUMBER=${BUILD_NUMBER}
-                 sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                 git commit -m "update deployment file with $BUILD_NUMBER"
-                 git push https"//${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GITHUB_TOKEN} HEAD:master
-                '''
-                
-            }
-
-
-        }
-    }
-
-}
